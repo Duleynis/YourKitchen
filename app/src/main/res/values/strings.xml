@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">YourKitchen</string>
+
     <string name="food_category_head">Категория</string>
     <string name="food_category_salads">Салаты</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="catalog_icon_title">Каталог</string>
+    <string name="favorite_icon_title">Избранное</string>
+
 </resources>
