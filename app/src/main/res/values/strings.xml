@@ -7,4 +7,5 @@
     <string name="catalog_icon_title">Каталог</string>
     <string name="favorite_icon_title">Избранное</string>
 
+    <string name="search_food_hint">Введите название блюда</string>
 </resources>

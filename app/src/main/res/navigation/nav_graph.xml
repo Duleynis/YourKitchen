@@ -3,25 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/mainFragment">
+    app:startDestination="@id/Catalog_Fragment">
 
     <fragment
-        android:id="@+id/mainFragment"
-        android:name="mobileApp.recipecatalog.ReceiptCatalogView"
+        android:id="@+id/Catalog_Fragment"
+        android:name="mobileApp.recipecatalog.CatalogView"
         android:label="ReceiptCatalog_Fragment"
         tools:layout="@layout/fragment_receipts_catalog">
-        <action
-            android:id="@+id/action_mainFragment_to_favoriteFragment2"
-            app:destination="@id/favoriteFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/favoriteFragment"
-        android:name="mobileApp.recipecatalog.FavoriteReceiptsView"
-        android:label="FavoriteReceipts_Fragment"
-        tools:layout="@layout/fragment_favorite_receipts">
-        <action
-            android:id="@+id/action_favoriteFragment_to_mainFragment"
-            app:destination="@id/mainFragment" />
     </fragment>
 </navigation>
