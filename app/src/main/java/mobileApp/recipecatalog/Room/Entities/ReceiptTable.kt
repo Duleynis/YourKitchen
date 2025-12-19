@@ -11,5 +11,6 @@ data class ReceiptTable (
     @PrimaryKey(autoGenerate = true) val foodID : Int = 0,
     val title : String,
     val category: String,
-    val imageID : Int
+    val imagePath : String,
+    val ingredientsDescription : String
 )

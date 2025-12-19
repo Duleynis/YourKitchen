@@ -8,4 +8,18 @@
     <string name="favorite_icon_title">Избранное</string>
 
     <string name="search_food_hint">Введите название блюда</string>
+
+    <string name="addReceipts_btn_text">Добавить рецепт</string>
+    <string name="SaveReceipts_btn_text">Сохранить рецепт</string>
+    <string name="add_step_btn">Добавить шаг приготовления</string>
+
+    <string name="receiptTitle">Введите название рецепта</string>
+
+    <string name="ingredientsTitle">Ингредиенты:</string>
+    <string name="ingredientsHint">Заполните информацию об ингредиентах</string>
+
+    <string name="cookingSteps">Приготовление:</string>
+    <string name="stepNumber">Шаг %1$d</string>
+    <string name="step_hint">Опишите шаг приготовления блюда</string>
+
 </resources>

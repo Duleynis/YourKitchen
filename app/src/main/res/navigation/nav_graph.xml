@@ -7,8 +7,26 @@
 
     <fragment
         android:id="@+id/Catalog_Fragment"
-        android:name="mobileApp.recipecatalog.CatalogView"
+        android:name="mobileApp.recipecatalog.Fragments.CatalogView"
         android:label="ReceiptCatalog_Fragment"
         tools:layout="@layout/fragment_receipts_catalog">
+        <action
+            android:id="@+id/action_Catalog_Fragment_to_AddReceipt_Fragment"
+            app:destination="@id/AddReceipt_Fragment" />
+
+        <argument
+            android:name="receiptID"
+            app:argType="integer"
+            android:defaultValue="-1"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/AddReceipt_Fragment"
+        android:name="mobileApp.recipecatalog.Fragments.AddReceiptView"
+        android:label="AddReceipt"
+        tools:layout="@layout/fragment_add_receipt__view">
+        <action
+            android:id="@+id/action_AddReceipt_Fragment_to_Catalog_Fragment"
+            app:destination="@id/Catalog_Fragment" />
     </fragment>
 </navigation>
