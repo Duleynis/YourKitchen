@@ -19,6 +19,11 @@ import mobileApp.recipecatalog.R
 import mobileApp.recipecatalog.RecipeViewModel
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
 
+
+
+
+
+
 class CatalogView : Fragment(), IReceiptDelete {
     private lateinit var root: View
     private lateinit var categorySpinner: Spinner
