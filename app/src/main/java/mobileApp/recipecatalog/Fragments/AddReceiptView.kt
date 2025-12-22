@@ -9,12 +9,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.Spinner
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,162 +23,189 @@ import org.koin.androidx.viewmodel.ext.android.activityViewModel
 import java.io.File
 
 class AddReceiptView : Fragment() {
-    private val viewModel : RecipeViewModel by activityViewModel()
-    private lateinit var stepsAdapter: StepsAdapter
-    private lateinit var root : View
-    private lateinit var receiptTitle : EditText
+
+    private val viewModel: RecipeViewModel by activityViewModel()
+
+    private lateinit var root: View
+    private lateinit var receiptTitle: EditText
     private lateinit var categorySpinner: Spinner
     private lateinit var receiptImage: ImageView
     private lateinit var ingredientsDescription: EditText
     private lateinit var stepRecyclerView: RecyclerView
-    private lateinit var addStep_btn : Button
-    private lateinit var saveReceipt_btn : Button
-    private var stepsList = mutableListOf<String>()
+    private lateinit var addStepBtn: Button
+    private lateinit var saveReceiptBtn: Button
+    private lateinit var stepsAdapter: StepsAdapter
 
-    private lateinit var spinnerAdapter : ArrayAdapter<String>
-    private var selectedImageURI : Uri? = null
-    private var image_path : String? = null
-    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            selectedImageURI = it
-            receiptImage.setImageURI(it)
+    private lateinit var spinnerAdapter: ArrayAdapter<String>
+
+    private var imageUri: Uri? = null
+    private var imagePath: String? = null
+
+    private val imagePicker =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                imageUri = it
+                receiptImage.setImageURI(it)
+            }
         }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         root = inflater.inflate(R.layout.fragment_add_receipt__view, container, false)
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initializeComponents()
 
-        val receiptID = arguments?.getInt("receiptID", -1) ?: -1
+        initViews()
+        initRecycler()
 
-        if(receiptID != - 1){
-            viewModel.getReceiptWithSteps(receiptID).observe(viewLifecycleOwner) { (receipt, steps) ->
-                receiptTitle.setText(receipt.title)
-
-                val position = spinnerAdapter.getPosition(receipt.category)
-                categorySpinner.setSelection(position)
-
-                val file = File(receipt.imagePath)
-                if(file.exists()){
-                    image_path = receipt.imagePath
-                    val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                    receiptImage.setImageBitmap(bitmap)
-                }
-
-                ingredientsDescription.setText(receipt.ingredientsDescription)
-
-                steps.forEach {
-                    stepsList.add(it.stepDescription)
-                }
-                stepsAdapter = StepsAdapter(stepsList)
-                stepRecyclerView.adapter = stepsAdapter
-                stepRecyclerView.layoutManager = LinearLayoutManager(requireActivity())
-            }
-        }
-
-        else{
-            stepsAdapter = StepsAdapter(stepsList)
-            stepRecyclerView.adapter = stepsAdapter
-            stepRecyclerView.layoutManager = LinearLayoutManager(requireActivity())
-        }
+        val receiptId = arguments?.getInt("receiptID", -1) ?: -1
+        if (receiptId != -1) loadReceipt(receiptId)
 
         receiptImage.setOnClickListener {
-            imagePickerLauncher.launch("image/*")
+            imagePicker.launch("image/*")
         }
 
-        addStep_btn.setOnClickListener {
+        addStepBtn.setOnClickListener {
             stepsAdapter.addStep("")
             stepRecyclerView.scrollToPosition(stepsAdapter.itemCount - 1)
         }
 
-        saveReceipt_btn.setOnClickListener {
-            val title = receiptTitle.text.toString()
-            val spinnerPosition = categorySpinner.selectedItemPosition
-            val ingredientsDesc = ingredientsDescription.text.toString()
+        saveReceiptBtn.setOnClickListener {
+            saveReceipt(receiptId)
+        }
+    }
 
-            if(title.isEmpty() || spinnerPosition == 0 || ingredientsDesc.isEmpty()){
-                Snackbar.make(requireView(), "Заполните название, категорию рецепта, а также поле ингредиенты!",
-                    Snackbar.LENGTH_LONG).show()
-                return@setOnClickListener
+    // -------------------- LOAD --------------------
+
+    private fun loadReceipt(id: Int) {
+        viewModel.getReceiptWithSteps(id).observe(viewLifecycleOwner) { (receipt, steps) ->
+
+            receiptTitle.setText(receipt.title)
+            ingredientsDescription.setText(receipt.ingredientsDescription)
+
+            categorySpinner.setSelection(
+                spinnerAdapter.getPosition(receipt.category)
+            )
+
+            val file = File(receipt.imagePath)
+            if (file.exists()) {
+                imagePath = receipt.imagePath
+                receiptImage.setImageBitmap(
+                    BitmapFactory.decodeFile(file.absolutePath)
+                )
             }
 
-            val dir = File(requireContext().filesDir, "images")
-            if(!dir.exists()) dir.mkdirs()
+            val stepTexts = steps.map { it.stepDescription }
+            stepsAdapter.updateData(stepTexts)
+        }
+    }
 
-            val receipt: ReceiptTable
-            if(selectedImageURI != null){
-                val inputStream = requireContext().contentResolver.openInputStream(selectedImageURI!!)
+    // -------------------- SAVE --------------------
+
+    private fun saveReceipt(receiptId: Int) {
+
+        val title = receiptTitle.text.toString()
+        val ingredients = ingredientsDescription.text.toString()
+        val categoryPos = categorySpinner.selectedItemPosition
+
+        if (title.isBlank() || ingredients.isBlank() || categoryPos == 0) {
+            Snackbar.make(root, "Заполните все поля", Snackbar.LENGTH_LONG).show()
+            return
+        }
+
+        val image = saveImage(title)
+
+        val receipt = ReceiptTable(
+            foodID = if (receiptId == -1) 0 else receiptId,
+            title = title,
+            category = categorySpinner.selectedItem.toString(),
+            ingredientsDescription = ingredients,
+            imagePath = image
+        )
+
+        val stepsText = stepsAdapter.getSteps()
+        if (stepsText.any { it.isBlank() }) {
+            Snackbar.make(root, "Заполните все шаги", Snackbar.LENGTH_LONG).show()
+            return
+        }
+
+        if (receiptId == -1) {
+            // ➕ Новый рецепт
+            viewModel.insertReceipt(receipt) { newId ->
+                saveSteps(newId, stepsText)
+                findNavController().popBackStack()
+            }
+        } else {
+            // ✏ Обновление
+            viewModel.updateReceipt(receipt)
+            viewModel.deleteStepsByRecipeId(receiptId.toLong())
+            saveSteps(receiptId.toLong(), stepsText)
+            findNavController().popBackStack()
+        }
+    }
+
+    private fun saveSteps(recipeId: Long, steps: List<String>) {
+        val entities = steps.mapIndexed { index, text ->
+            StepReceiptTable(
+                recipeID = recipeId,
+                stepNumber = index + 1,
+                stepDescription = text
+            )
+        }
+        viewModel.insertReceiptSteps(entities)
+    }
+
+    private fun saveImage(title: String): String {
+        val dir = File(requireContext().filesDir, "images")
+        if (!dir.exists()) dir.mkdirs()
+
+        return when {
+            imageUri != null -> {
                 val file = File(dir, "$title.jpg")
-                inputStream.use { input ->
+                requireContext().contentResolver.openInputStream(imageUri!!).use { input ->
                     file.outputStream().use { output ->
                         input?.copyTo(output)
                     }
                 }
-                receipt = ReceiptTable(
-                    title = title,
-                    category = categorySpinner.selectedItem.toString(),
-                    ingredientsDescription = ingredientsDesc ,
-                    imagePath = file.absolutePath
-                )
-            }
-            else if (receiptImage.drawable == null){
-                receipt = ReceiptTable(
-                    title = title,
-                    category = categorySpinner.selectedItem.toString(),
-                    ingredientsDescription = ingredientsDesc,
-                    imagePath = "noSelected"
-                )
-            }
-            else{
-                receipt = ReceiptTable(
-                    title = title,
-                    category = categorySpinner.selectedItem.toString(),
-                    ingredientsDescription = ingredientsDesc,
-                    imagePath = image_path!!
-                )
+                file.absolutePath
             }
 
-            val stepsDescription = stepsAdapter.getSteps()
-            if(stepsDescription.isNotEmpty()){
-                viewModel.insertReceipt(receipt){ receiptID ->
-                    val steps : MutableList<StepReceiptTable> = mutableListOf()
-                    for (index in stepsDescription.indices){
-                        if(stepsDescription[index].isNotEmpty()){
-                            val step = StepReceiptTable(
-                                recipeID = receiptID,
-                                stepNumber = index + 1,
-                                stepDescription = stepsDescription[index]
-                            )
-                            steps.add(step)
-                        }
-                        else{
-                            Snackbar.make(requireView(), "Заполните все шаги приготовления или удалите лишние!",
-                                Snackbar.LENGTH_LONG).show()
-                            return@insertReceipt
-                        }
-                    }
-                    viewModel.insertReceiptSteps(steps)
-                    findNavController().popBackStack()
-                }
-            }
-            else
-                Snackbar.make(requireView(), "В рецепте должен быть по крайней мере один шаг приготовления!",
-                    Snackbar.LENGTH_LONG).show()
+            imagePath != null -> imagePath!!
+
+            else -> "noImage"
         }
     }
 
-    fun SetSpinner() {
+    // -------------------- INIT --------------------
+
+    private fun initViews() {
+        receiptTitle = root.findViewById(R.id.receiptTitle)
+        categorySpinner = root.findViewById(R.id.categoryReceiptSpinner)
+        ingredientsDescription = root.findViewById(R.id.ingredientsEditText)
+        receiptImage = root.findViewById(R.id.receiptImage)
+        stepRecyclerView = root.findViewById(R.id.stepRecyclerView)
+        addStepBtn = root.findViewById(R.id.add_step_btn)
+        saveReceiptBtn = root.findViewById(R.id.save_receipt_btn)
+
+        setupSpinner()
+    }
+
+    private fun initRecycler() {
+        stepsAdapter = StepsAdapter(mutableListOf())
+        stepRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        stepRecyclerView.adapter = stepsAdapter
+    }
+
+    private fun setupSpinner() {
         val categories = listOf(
             "Выберите категорию рецепта",
-            "Салаты", "Первые блюда", "Вторые блюда", "Гарниры", "Десерты", "Напитки"
+            "Салаты", "Первые блюда", "Вторые блюда",
+            "Гарниры", "Десерты", "Напитки"
         )
 
         spinnerAdapter = object : ArrayAdapter<String>(
@@ -192,30 +214,16 @@ class AddReceiptView : Fragment() {
             categories
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getView(position, convertView, parent)
-                (view as TextView).apply {
-                    textSize = 16f
-                    setTextColor(Color.BLACK)
+                return super.getView(position, convertView, parent).apply {
+                    (this as TextView).setTextColor(Color.BLACK)
                 }
-                return view
             }
         }
 
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
         categorySpinner.adapter = spinnerAdapter
-    }
-
-    fun initializeComponents(){
-        receiptTitle = root.findViewById(R.id.receiptTitle)
-
-        categorySpinner = root.findViewById(R.id.categoryReceiptSpinner)
-        SetSpinner()
-
-        ingredientsDescription = root.findViewById(R.id.ingredientsEditText)
-        receiptImage = root.findViewById(R.id.receiptImage)
-
-        stepRecyclerView = root.findViewById(R.id.stepRecyclerView)
-        addStep_btn = root.findViewById(R.id.add_step_btn)
-        saveReceipt_btn = root.findViewById(R.id.save_receipt_btn)
     }
 }

@@ -78,6 +78,12 @@ class StepsAdapter(
         notifyItemInserted(steps.size - 1)
     }
 
+    fun updateData(newSteps : List<String>){
+        steps.clear()
+        steps.addAll(newSteps)
+        notifyDataSetChanged()
+    }
+
     fun getSteps() : MutableList<String>{
         return steps
     }

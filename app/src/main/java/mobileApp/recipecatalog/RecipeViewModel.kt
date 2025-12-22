@@ -71,15 +71,27 @@ class RecipeViewModel(
         }
     }
 
+    fun updateReceipt(receipt: ReceiptTable) {
+        viewModelScope.launch {
+            receiptDAO.updateReceipt(receipt)
+        }
+    }
+
     fun deleteReceipt(receiptTitle: String) {
         viewModelScope.launch {
             receiptDAO.removeReceipt(receiptTitle)
         }
     }
 
-    fun insertReceiptSteps(steps: MutableList<StepReceiptTable>) {
+    fun insertReceiptSteps(steps: List<StepReceiptTable>) {
         viewModelScope.launch {
             stepDAO.insertSteps(steps)
+        }
+    }
+
+    fun deleteStepsByRecipeId(receiptID : Long) {
+        viewModelScope.launch {
+            stepDAO.deleteStepsByRecipeId(receiptID)
         }
     }
 

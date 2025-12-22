@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import mobileApp.recipecatalog.Room.Entities.ReceiptSteps
 import mobileApp.recipecatalog.Room.Entities.ReceiptTable
@@ -16,6 +17,9 @@ interface ReceiptDAO {
 
     @Query("DELETE FROM Receipts WHERE title = :receiptTitle")
     suspend fun removeReceipt(receiptTitle : String)
+
+    @Update
+    suspend fun updateReceipt(receipt : ReceiptTable)
 
     @Query("SELECT * FROM Receipts WHERE LOWER(title) LIKE LOWER(:query)")
     fun getReceiptsByQuery(query : String) : Flow<List<ReceiptTable>>
