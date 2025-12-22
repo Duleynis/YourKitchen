@@ -18,5 +18,6 @@ data class StepReceiptTable (
     @PrimaryKey(autoGenerate = true) val stepID : Int = 0,
     val recipeID: Long,
     val stepNumber: Int,
-    var stepDescription: String
+    var stepDescription: String,
+    var durationSeconds : Int
 )

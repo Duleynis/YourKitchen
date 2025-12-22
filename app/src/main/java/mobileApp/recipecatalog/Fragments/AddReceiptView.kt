@@ -100,8 +100,12 @@ class AddReceiptView : Fragment() {
                 )
             }
 
+            // Получаем текст и время шагов
             val stepTexts = steps.map { it.stepDescription }
-            stepsAdapter.updateData(stepTexts)
+            val stepDurations = steps.map { it.durationSeconds }
+
+            // Обновляем адаптер с текстом и временем
+            stepsAdapter.updateData(stepTexts, stepDurations)
         }
     }
 
@@ -137,24 +141,26 @@ class AddReceiptView : Fragment() {
         if (receiptId == -1) {
             // ➕ Новый рецепт
             viewModel.insertReceipt(receipt) { newId ->
-                saveSteps(newId, stepsText)
+                saveSteps(newId)
                 findNavController().popBackStack()
             }
         } else {
             // ✏ Обновление
             viewModel.updateReceipt(receipt)
             viewModel.deleteStepsByRecipeId(receiptId.toLong())
-            saveSteps(receiptId.toLong(), stepsText)
+            saveSteps(receiptId.toLong())
             findNavController().popBackStack()
         }
     }
 
-    private fun saveSteps(recipeId: Long, steps: List<String>) {
-        val entities = steps.mapIndexed { index, text ->
+    private fun saveSteps(recipeId: Long) {
+        val stepsWithTime = stepsAdapter.getStepsWithTime()
+        val entities = stepsWithTime.mapIndexed { index, step ->
             StepReceiptTable(
                 recipeID = recipeId,
                 stepNumber = index + 1,
-                stepDescription = text
+                stepDescription = step.description,
+                durationSeconds = step.durationSeconds // добавляем поле в сущность БД
             )
         }
         viewModel.insertReceiptSteps(entities)
